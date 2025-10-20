@@ -10,6 +10,14 @@ export SDKMAN_DIR="$HOME/.sdkman"
 
 
 # ========================================
+# 🔠 Case-insensitive autocompletion
+# ----------------------------------------
+# Makes tab completion ignore case (e.g. "cd Do" completes "Documents")
+# ========================================
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+
+
+# ========================================
 # 🧱 Artifact Store (JFrog)
 # ----------------------------------------
 # Environment variables for accessing the internal
