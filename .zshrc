@@ -22,6 +22,14 @@ export ARTIFACT_STORE_SECRET="$(security find-generic-password -a sgebb -s artif
 
 
 # ========================================
+# 🚀 zoxide (smarter cd)
+# ----------------------------------------
+# Initializes zoxide for zsh and defines the `z` command
+# ========================================
+eval "$(zoxide init zsh)"
+
+
+# ========================================
 # 🐳 Rancher Desktop
 # ----------------------------------------
 # Automatically managed by Rancher Desktop.
