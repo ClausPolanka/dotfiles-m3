@@ -1,4 +1,3 @@
-###
 # ========================================
 # 🧩 Custom user scripts
 # ----------------------------------------
@@ -62,23 +61,42 @@ alias lld="eza -l --icons --only-dirs"
 
 # ========================================
 # ⌨️ Vim-style Insert-mode escape: jk / kj
+# (only applies inside Vim, harmless in zsh)
 # ========================================
-inoremap() { :; } 2>/dev/null  # ignore if running outside vim
-# (only applies inside vim, not zsh – you already configured this in vim)
+inoremap() { :; } 2>/dev/null
 
 
 # ========================================
 # 🔎 fzf-powered history search (Ctrl+R)
 # ----------------------------------------
-# Uses fzf's matching syntax (NOT full regex)
-# Inserts selected command into prompt (not executed)
+# - Uses fzf's matching syntax (NOT full regex)
+# - Deduplicates history lines (newest commands win)
+# - Inserts selected command into prompt (not executed)
 # ========================================
 if command -v fzf >/dev/null 2>&1; then
+
   fzf-history-widget() {
     local selected
     selected=$(
       fc -l -n 1 \
         | sed 's/^ *[0-9]\+ *//' \
+        | awk '
+            {
+              lines[NR] = $0
+            }
+            END {
+              # iterate from newest to oldest, keep first occurrence
+              for (i = NR; i >= 1; i--) {
+                if (!seen[lines[i]]++) {
+                  out[++k] = lines[i]
+                }
+              }
+              # print back in original chronological order
+              for (j = k; j >= 1; j--) {
+                print out[j]
+              }
+            }
+          ' \
         | fzf --tac --reverse --exact
     ) || return
 
@@ -101,6 +119,7 @@ if command -v fzf >/dev/null 2>&1; then
   #   1. Type regex into the prompt (e.g. dep.*Update)
   #   2. Press Ctrl+G
   #   3. fzf shows only matches
+  #   4. Selected command is inserted into prompt (not executed)
   # ======================================
   hregex-widget() {
     local pattern selected
