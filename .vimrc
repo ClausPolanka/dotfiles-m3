@@ -37,3 +37,9 @@ inoremap jk <Esc>
 
 " Optional: also allow 'kj'
 inoremap kj <Esc>
+
+set backup
+set backupext=.bak
+set backupdir=~/.vim/backup//
+set undofile
+set undodir=~/.vim/undo//
