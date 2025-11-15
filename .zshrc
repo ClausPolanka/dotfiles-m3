@@ -245,6 +245,154 @@ gopen() {
 
 
 # ========================================
+# 🧭 gmenu – fzf-based Git command center
+# ========================================
+gmenu() {
+  # Abort if not in a git repo
+  git rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
+    echo "Not inside a git repository."
+    return 1
+  }
+
+  local choice
+  choice=$(
+    printf '%s\n' \
+      "status (git status -sb)" \
+      "diff (working tree)" \
+      "diff staged" \
+      "log (graph)" \
+      "checkout branch (fzf)" \
+      "open tracked file (fzf)" \
+      "add file (fzf)" \
+      "commit (message)" \
+      "push" \
+      "pull --rebase" \
+      "stash browser" \
+      "conflicts (open file)" \
+      "rebase onto commit (fzf)" \
+      "delete local branch (fzf)" \
+      "rename current branch" \
+      "quit" \
+    | fzf --height=70% --reverse --prompt="git> "
+  ) || return
+
+  case "$choice" in
+    "status (git status -sb)")
+      git status -sb
+      ;;
+    "diff (working tree)")
+      git diff
+      ;;
+    "diff staged")
+      git diff --staged
+      ;;
+    "log (graph)")
+      # falls du glo definiert hast, nimm das – sonst plain log
+      if typeset -f glo >/dev/null 2>&1; then
+        glo
+      else
+        git log --oneline --decorate --graph --all
+      fi
+      ;;
+    "checkout branch (fzf)")
+      if typeset -f gcof >/dev/null 2>&1; then
+        gcof
+      else
+        echo "gcof not defined – falling back to plain 'git checkout':"
+        read "br?Branch name: "
+        [[ -n "$br" ]] && git checkout "$br"
+      fi
+      ;;
+    "open tracked file (fzf)")
+      if typeset -f gopen >/dev/null 2>&1; then
+        gopen
+      else
+        local file
+        file=$(git ls-files | fzf --prompt="open> ") || return
+        ${EDITOR:-vim} "$file"
+      fi
+      ;;
+    "add file (fzf)")
+      if typeset -f gadd >/dev/null 2>&1; then
+        gadd
+      else
+        local file
+        file=$(git ls-files --modified --others --exclude-standard \
+               | fzf --prompt="add> " \
+                     --preview 'git diff --color=always -- {}') || return
+        git add "$file"
+      fi
+      ;;
+    "commit (message)")
+      local msg
+      read "msg?Commit message: "
+      [[ -n "$msg" ]] && git commit -am "$msg"
+      ;;
+    "push")
+      git push
+      ;;
+    "pull --rebase")
+      git pull --rebase
+      ;;
+    "stash browser")
+      if typeset -f gstash >/dev/null 2>&1; then
+        gstash
+      else
+        git stash list
+      fi
+      ;;
+    "conflicts (open file)")
+      if typeset -f gmerge >/dev/null 2>&1; then
+        gmerge
+      else
+        local file
+        file=$(git diff --name-only --diff-filter=U \
+               | fzf --prompt="conflict> " \
+                     --preview 'git diff --color=always -- {}') || return
+        ${EDITOR:-vim} "$file"
+      fi
+      ;;
+    "rebase onto commit (fzf)")
+      if typeset -f grebase >/dev/null 2>&1; then
+        grebase
+      else
+        local commit
+        commit=$(
+          git log --oneline --reverse --color=always \
+          | fzf --ansi --tac --prompt="rebase onto> " \
+                --preview 'git show --color=always {1}'
+        ) || return
+        git rebase -i "$(echo "$commit" | awk '{print $1}')"
+      fi
+      ;;
+    "delete local branch (fzf)")
+      if typeset -f gdel >/dev/null 2>&1; then
+        gdel
+      else
+        local br
+        br=$(git branch | sed 's/*//' | sed 's/ //g' \
+             | fzf --prompt="delete-branch> ") || return
+        git branch -D "$br"
+      fi
+      ;;
+    "rename current branch")
+      if typeset -f grename >/dev/null 2>&1; then
+        grename
+      else
+        local cur new
+        cur=$(git branch --show-current)
+        read "new?New name for branch '$cur': "
+        [[ -n "$new" ]] && git branch -m "$new"
+      fi
+      ;;
+    "quit"|*)
+      return 0
+      ;;
+  esac
+}
+
+
+# ========================================
 # ⌨️ Vim-style Insert-mode escape: jk / kj
 # (only applies inside Vim, harmless in zsh)
 # ========================================
