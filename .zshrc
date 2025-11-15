@@ -37,6 +37,38 @@ eval "$(zoxide init zsh)"
 
 
 # ========================================
+# 📂 zoxide + fzf directory jumper (Ctrl+O)
+# ----------------------------------------
+# Uses your zoxide database as a source of "frecency" dirs
+# and lets you fuzzy-pick one with fzf.
+# Preview uses eza to show directory contents.
+# ========================================
+if command -v zoxide >/dev/null 2>&1 && command -v fzf >/dev/null 2>&1; then
+  fzf-zoxide-widget() {
+    local dir
+    dir=$(
+      zoxide query -l \
+        | fzf --height=40% \
+              --reverse \
+              --prompt="zoxide> " \
+              --preview 'eza --icons --group-directories-first --color=always {} 2>/dev/null | head -100' \
+              --preview-window=right:60%
+    ) || return
+
+    [[ -z "$dir" ]] && return
+
+    # Jump directly to the selected directory
+    builtin cd -- "$dir"
+    zle reset-prompt
+  }
+
+  zle -N fzf-zoxide-widget
+  # Ctrl+O to open zoxide fzf jumper
+  bindkey '^O' fzf-zoxide-widget
+fi
+
+
+# ========================================
 # 🐳 Rancher Desktop — managed
 # ========================================
 ### MANAGED BY RANCHER DESKTOP START (DO NOT EDIT)
