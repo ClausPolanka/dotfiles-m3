@@ -183,6 +183,50 @@ fi
 
 
 # ========================================
+# 📄 fzf file finder (Ctrl+P)
+# ----------------------------------------
+# "VS Code style" Ctrl+P:
+#   - Uses fd if available, otherwise find
+#   - Lets you fuzzy-search files with fzf
+#   - Opens selection in $EDITOR (default: nvim)
+# ========================================
+if command -v fzf >/dev/null 2>&1; then
+  fzf-file-widget() {
+    local finder file editor
+
+    if command -v fd >/dev/null 2>&1; then
+      finder='fd --type f --hidden --follow --exclude .git'
+    else
+      # Fallback to find if fd is not installed
+      finder='find . -type f'
+    fi
+
+    file=$(
+      eval "$finder" \
+        | fzf --height=40% \
+              --reverse \
+              --prompt="Files> " \
+              --preview 'sed -n "1,120p" {} 2>/dev/null' \
+              --preview-window=right:60%
+    ) || return
+
+    [[ -z "$file" ]] && return
+
+    editor=${EDITOR:-vim}
+
+    # Put "$EDITOR <file>" into the prompt and execute immediately
+    BUFFER="$editor ${(q)file}"
+    CURSOR=${#BUFFER}
+    zle accept-line
+  }
+
+  zle -N fzf-file-widget
+  # Ctrl+P = file finder (like in editors)
+  bindkey '^P' fzf-file-widget
+fi
+
+
+# ========================================
 # 🖼 Prompt / environment tuning (optional)
 # Add custom prompt or ZSH theme here
 # ========================================
