@@ -1,4 +1,16 @@
 # ========================================
+# 📜 History tuning (more useful history)
+# ========================================
+HISTSIZE=50000          # how many commands kept in memory
+SAVEHIST=50000          # how many saved to ~/.zsh_history
+setopt HIST_IGNORE_DUPS         # ignore direct duplicates
+setopt HIST_IGNORE_ALL_DUPS     # remove older duplicates
+setopt HIST_REDUCE_BLANKS       # trim superfluous spaces
+setopt INC_APPEND_HISTORY       # write history incrementally
+setopt SHARE_HISTORY            # share history across terminals
+
+
+# ========================================
 # 🧩 Custom user scripts
 # ----------------------------------------
 # Add personal bin directory to PATH
@@ -41,23 +53,29 @@ eval "$(zoxide init zsh)"
 # ----------------------------------------
 # Uses your zoxide database as a source of "frecency" dirs
 # and lets you fuzzy-pick one with fzf.
-# Preview uses eza to show directory contents.
+# Preview uses eza (or ls as fallback) to show directory contents.
 # ========================================
 if command -v zoxide >/dev/null 2>&1 && command -v fzf >/dev/null 2>&1; then
   fzf-zoxide-widget() {
-    local dir
+    local dir preview_cmd
+
+    if command -v eza >/dev/null 2>&1; then
+      preview_cmd='eza --icons --group-directories-first --color=always {} 2>/dev/null | head -100'
+    else
+      preview_cmd='ls -la {} 2>/dev/null | head -100'
+    fi
+
     dir=$(
       zoxide query -l \
         | fzf --height=40% \
               --reverse \
               --prompt="zoxide> " \
-              --preview 'eza --icons --group-directories-first --color=always {} 2>/dev/null | head -100' \
+              --preview "$preview_cmd" \
               --preview-window=right:60%
     ) || return
 
     [[ -z "$dir" ]] && return
 
-    # Jump directly to the selected directory
     builtin cd -- "$dir"
     zle reset-prompt
   }
@@ -82,13 +100,21 @@ export PATH="/Users/sageniuz/.rd/bin:$PATH"
 # ----------------------------------------
 # Fully replace ls with modern features:
 # icons, git integration, better formatting
+# Guarded so shell still works if eza is missing.
 # ========================================
-alias ls="eza --icons --group-directories-first --git"
-alias ll="eza -l --icons --git --group-directories-first --header"
-alias la="eza -la --icons --group-directories-first --header"
-alias lt="eza --tree --icons --git-ignore --level=2"
-alias ltt="eza --tree --icons --git-ignore --level=3"
-alias lld="eza -l --icons --only-dirs"
+if command -v eza >/dev/null 2>&1; then
+  alias ls="eza --icons --group-directories-first --git"
+  alias ll="eza -l --icons --git --group-directories-first --header"
+  alias la="eza -la --icons --group-directories-first --header"
+  alias lt="eza --tree --icons --git-ignore --level=2"
+  alias ltt="eza --tree --icons --git-ignore --level=3"
+  alias lld="eza -l --icons --only-dirs"
+else
+  # sensible defaults if eza is not installed
+  alias ls="ls -G"
+  alias ll="ls -l"
+  alias la="ls -la"
+fi
 
 
 # ========================================
@@ -183,12 +209,12 @@ fi
 
 
 # ========================================
-# 📄 fzf file finder (Ctrl+P)
+# 📄 fzf file finder (Ctrl+F)
 # ----------------------------------------
-# "VS Code style" Ctrl+P:
+# CTRL+F:
 #   - Uses fd if available, otherwise find
 #   - Lets you fuzzy-search files with fzf
-#   - Opens selection in $EDITOR (default: nvim)
+#   - Opens selection in $EDITOR (default: vim)
 # ========================================
 if command -v fzf >/dev/null 2>&1; then
   fzf-file-widget() {
@@ -214,27 +240,28 @@ if command -v fzf >/dev/null 2>&1; then
 
     editor=${EDITOR:-vim}
 
-    # Put "$EDITOR <file>" into the prompt and execute immediately
     BUFFER="$editor ${(q)file}"
     CURSOR=${#BUFFER}
     zle accept-line
   }
 
   zle -N fzf-file-widget
-  # Ctrl+P = file finder (like in editors)
+  # Ctrl+F = file finder (you chose this instead of Ctrl+P)
   bindkey '^F' fzf-file-widget
 fi
 
 
 # ========================================
-# 🖼 Prompt / environment tuning (optional)
-# Add custom prompt or ZSH theme here
+# 🖼 Prompt / environment tuning
+# ----------------------------------------
+# Minimal prompt:
+#   ~/path/to/project branch ✚✓⚡⇣⇡ %
 # ========================================
 git_prompt_info() {
   local branch dirty staged untracked conflict ahead behind
   local symbols=""
 
-  # Get branch
+  # If not in a git repo: nothing
   branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || return
 
   # Status indicators (colored)
@@ -271,5 +298,6 @@ git_prompt_info() {
 
 setopt PROMPT_SUBST
 
+# Path (~/...), then branch + git symbols, then prompt char
 PROMPT='%F{yellow}%~%f %F{blue}$(git_prompt_info)%f %# '
 PS1=$PROMPT
