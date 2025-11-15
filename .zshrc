@@ -161,6 +161,88 @@ alias gmt="git mergetool"
 alias gundo="git reset --hard HEAD~1"
 alias gc!="git commit -v --no-edit"
 
+# fzf checkout branch
+gcof() {
+  local branch
+  branch=$(git branch --all --color=always | sed 's/^[* ]*//' \
+    | fzf --height=40% --ansi --preview-window=right:60% \
+          --preview 'git log --oneline --decorate --graph -n 20 --color=always {}' \
+          --prompt="checkout> ") || return
+  git checkout "$(echo "$branch" | tr -d '[:space:]')"
+}
+alias gco="gcof"
+
+glo() {
+  git log --graph --oneline --decorate --color=always --all \
+    | fzf --ansi --height=70% --reverse \
+        --preview 'git show --color=always {1}' \
+        --bind "enter:execute:
+            (echo {} | awk '{print \$1}' | xargs git show --color=always | less -R)"
+}
+
+gstash() {
+  git stash list --color=always \
+    | fzf --ansi --preview 'git stash show -p --color=always {1}' \
+          --prompt="stash> " \
+    | awk -F: '{print $1}'
+}
+alias gst="gstash"
+
+gcdiff() {
+  local file
+  file=$(git diff --name-only | fzf --height=40% --reverse --prompt="diff> " \
+          --preview "git diff --color=always -- {}") || return
+  git diff "$file"
+}
+
+gadd() {
+  local file
+  file=$(git ls-files --modified --others --exclude-standard \
+    | fzf --height=40% --reverse --prompt="add> " \
+          --preview 'git diff --color=always -- {}') || return
+  git add "$file"
+}
+alias ga="gadd"
+
+grebase() {
+  local commit
+  commit=$(git log --oneline --reverse --color=always \
+    | fzf --ansi --tac --prompt="rebase onto> " \
+          --preview 'git show --color=always {1}') || return
+  git rebase -i "$(echo "$commit" | awk '{print $1}')"
+}
+
+gmerge() {
+  local file
+  file=$(git diff --name-only --diff-filter=U \
+    | fzf --height=40% --reverse --prompt="merge-conflict> " \
+          --preview 'git diff --color=always -- {}') || return
+  echo "Opening conflicted file: $file"
+  ${EDITOR:-vim} "$file"
+}
+
+gdel() {
+  local branch
+  branch=$(git branch | sed 's/*//' | sed 's/ //g' \
+    | fzf --height=40% --reverse --prompt="delete-branch> ") || return
+  git branch -D "$branch"
+}
+
+grename() {
+  local branch new
+  branch=$(git branch --show-current)
+  read -r "new?New name for branch '$branch': "
+  git branch -m "$new"
+}
+
+gopen() {
+  local file
+  file=$(git ls-files \
+    | fzf --height=40% --reverse --prompt="open> " \
+          --preview 'sed -n "1,200p" {} 2>/dev/null') || return
+  ${EDITOR:-vim} "$file"
+}
+
 
 # ========================================
 # ⌨️ Vim-style Insert-mode escape: jk / kj
