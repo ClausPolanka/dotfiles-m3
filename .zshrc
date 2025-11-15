@@ -118,6 +118,50 @@ fi
 
 
 # ========================================
+# 🧲 Git Aliases (fast & minimal)
+# ========================================
+alias g="git"
+alias ga="git add"
+alias gaa="git add -A"
+alias gb="git branch"
+alias gba="git branch -a"
+alias gbd="git branch -d"
+alias gbD="git branch -D"
+
+alias gc="git commit -v"
+alias gcm="git commit -m"
+alias gca="git commit -a -v"
+alias gcam="git commit -a -m"
+
+alias gco="git checkout"
+alias gcb="git checkout -b"
+
+alias gd="git diff"
+alias gds="git diff --staged"
+
+alias gl="git log --oneline --decorate --graph --all"
+alias glp="git log --pretty=format:'%C(yellow)%h%Creset %Cgreen%cd%Creset %Cblue%an%Creset %C(auto)%d%Creset %s' --date=relative"
+
+alias gs="git status -sb"
+alias gss="git status"
+
+alias gp="git push"
+alias gpf="git push --force-with-lease"
+alias gpl="git pull --rebase"
+alias gpr="git pull --rebase --autostash"
+
+alias gcl="git clone"
+alias gclean="git clean -xdf"
+
+alias gr="git restore"
+alias grs="git restore --staged"
+
+alias gm="git merge"
+alias gmt="git mergetool"
+alias gundo="git reset --hard HEAD~1"
+
+
+# ========================================
 # ⌨️ Vim-style Insert-mode escape: jk / kj
 # (only applies inside Vim, harmless in zsh)
 # ========================================
