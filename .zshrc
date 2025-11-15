@@ -231,23 +231,24 @@ fi
 # Add custom prompt or ZSH theme here
 # ========================================
 git_prompt_info() {
-  local branch dirty staged untracked ahead behind conflict
+  local branch dirty staged untracked conflict ahead behind
+  local symbols=""
 
   # Get branch
   branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || return
 
-  # Status symbols (colored)
+  # Status indicators (colored)
+  [[ -n "$(git diff --name-only --diff-filter=U 2>/dev/null)" ]] \
+      && symbols+="%F{red}✖%f"
+
   [[ -n "$(git status --porcelain --untracked-files=no 2>/dev/null)" ]] \
-      && dirty="%F{red}⚡%f"
+      && symbols+="%F{red}⚡%f"
 
   [[ -n "$(git diff --cached --name-only 2>/dev/null)" ]] \
-      && staged="%F{green}✓%f"
+      && symbols+="%F{green}✓%f"
 
   [[ -n "$(git ls-files --others --exclude-standard 2>/dev/null)" ]] \
-      && untracked="%F{yellow}✚%f"
-
-  [[ -n "$(git diff --name-only --diff-filter=U 2>/dev/null)" ]] \
-      && conflict="%F{red}✖%f"
+      && symbols+="%F{yellow}✚%f"
 
   # Ahead / behind
   if git rev-parse --abbrev-ref @{upstream} >/dev/null 2>&1; then
@@ -256,17 +257,16 @@ git_prompt_info() {
     behind=${counts[1]}
     ahead=${counts[2]}
 
-    [[ "$ahead"  -gt 0 ]] && ahead="%F{blue}⇡$ahead%f"
-    [[ "$behind" -gt 0 ]] && behind="%F{magenta}⇣$behind%f"
+    [[ "$behind" -gt 0 ]] && symbols+="%F{magenta}⇣$behind%f"
+    [[ "$ahead"  -gt 0 ]] && symbols+="%F{blue}⇡$ahead%f"
   fi
 
-  # Only show ahead/behind if non-zero
-  local ahead_str="" behind_str=""
-
-  [[ "$ahead"  -gt 0 ]] && ahead_str="%F{blue}⇡$ahead%f"
-  [[ "$behind" -gt 0 ]] && behind_str="%F{magenta}⇣$behind%f"
-
-  echo "$branch $conflict$dirty$staged$untracked $behind_str$ahead_str"
+  # If no symbols, only show branch
+  if [[ -z "$symbols" ]]; then
+    echo "$branch"
+  else
+    echo "$branch $symbols"
+  fi
 }
 
 setopt PROMPT_SUBST
