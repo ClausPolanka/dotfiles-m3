@@ -254,56 +254,61 @@ gmenu() {
     return 1
   }
 
-  local choice
+  local -a items
+  items=(
+    "status: git status -sb"
+    "diff: working tree"
+    "diff-staged: staged changes"
+    "log: graph"
+    "checkout: branch (fzf)"
+    "open-file: tracked file (fzf)"
+    "add-file: stage file (fzf)"
+    "commit: commit with message"
+    "push: git push"
+    "pull: git pull --rebase"
+    "stash: stash browser"
+    "conflicts: open file (fzf)"
+    "rebase: rebase onto commit (fzf)"
+    "delete-branch: delete local (fzf)"
+    "rename-branch: rename current"
+    "quit: exit menu"
+  )
+
+  local choice action
   choice=$(
-    printf '%s\n' \
-      "status (git status -sb)" \
-      "diff (working tree)" \
-      "diff staged" \
-      "log (graph)" \
-      "checkout branch (fzf)" \
-      "open tracked file (fzf)" \
-      "add file (fzf)" \
-      "commit (message)" \
-      "push" \
-      "pull --rebase" \
-      "stash browser" \
-      "conflicts (open file)" \
-      "rebase onto commit (fzf)" \
-      "delete local branch (fzf)" \
-      "rename current branch" \
-      "quit" \
+    printf '%s\n' "${items[@]}" \
     | fzf --height=70% --reverse --prompt="git> "
   ) || return
 
-  case "$choice" in
-    "status (git status -sb)")
+  action=${choice%%:*}
+
+  case "$action" in
+    status)
       git status -sb
       ;;
-    "diff (working tree)")
+    diff)
       git diff
       ;;
-    "diff staged")
+    diff-staged)
       git diff --staged
       ;;
-    "log (graph)")
-      # falls du glo definiert hast, nimm das – sonst plain log
+    log)
       if typeset -f glo >/dev/null 2>&1; then
         glo
       else
         git log --oneline --decorate --graph --all
       fi
       ;;
-    "checkout branch (fzf)")
+    checkout)
       if typeset -f gcof >/dev/null 2>&1; then
         gcof
       else
-        echo "gcof not defined – falling back to plain 'git checkout':"
+        local br
         read "br?Branch name: "
         [[ -n "$br" ]] && git checkout "$br"
       fi
       ;;
-    "open tracked file (fzf)")
+    open-file)
       if typeset -f gopen >/dev/null 2>&1; then
         gopen
       else
@@ -312,7 +317,7 @@ gmenu() {
         ${EDITOR:-vim} "$file"
       fi
       ;;
-    "add file (fzf)")
+    add-file)
       if typeset -f gadd >/dev/null 2>&1; then
         gadd
       else
@@ -323,25 +328,25 @@ gmenu() {
         git add "$file"
       fi
       ;;
-    "commit (message)")
+    commit)
       local msg
       read "msg?Commit message: "
       [[ -n "$msg" ]] && git commit -am "$msg"
       ;;
-    "push")
+    push)
       git push
       ;;
-    "pull --rebase")
+    pull)
       git pull --rebase
       ;;
-    "stash browser")
+    stash)
       if typeset -f gstash >/dev/null 2>&1; then
         gstash
       else
         git stash list
       fi
       ;;
-    "conflicts (open file)")
+    conflicts)
       if typeset -f gmerge >/dev/null 2>&1; then
         gmerge
       else
@@ -352,7 +357,7 @@ gmenu() {
         ${EDITOR:-vim} "$file"
       fi
       ;;
-    "rebase onto commit (fzf)")
+    rebase)
       if typeset -f grebase >/dev/null 2>&1; then
         grebase
       else
@@ -365,7 +370,7 @@ gmenu() {
         git rebase -i "$(echo "$commit" | awk '{print $1}')"
       fi
       ;;
-    "delete local branch (fzf)")
+    delete-branch)
       if typeset -f gdel >/dev/null 2>&1; then
         gdel
       else
@@ -375,7 +380,7 @@ gmenu() {
         git branch -D "$br"
       fi
       ;;
-    "rename current branch")
+    rename-branch)
       if typeset -f grename >/dev/null 2>&1; then
         grename
       else
@@ -385,38 +390,10 @@ gmenu() {
         [[ -n "$new" ]] && git branch -m "$new"
       fi
       ;;
-    "quit"|*)
+    quit|*)
       return 0
       ;;
   esac
-}
-
-
-# ========================================
-# 📚 E-Book filename search helper
-# Usage: booksearch <pattern...>
-# Example: booksearch "harry potter"
-# ========================================
-booksearch() {
-  local ROOT="/Volumes/G-DRIVE SSD/E-Books"
-  local pattern
-
-  if [[ ! -d "$ROOT" ]]; then
-    echo "E-Books folder not found: $ROOT" >&2
-    return 1
-  fi
-
-  if [[ $# -eq 0 ]]; then
-    echo "Usage: booksearch <pattern or regex>" >&2
-    return 1
-  fi
-
-  # Join all arguments into one search pattern
-  pattern="$*"
-
-  # List files (epub/pdf/zip), then filter by pattern (case-insensitive)
-  rg --files -g '*.{epub,pdf,zip}' "$ROOT" \
-    | rg -i "$pattern"
 }
 
 
