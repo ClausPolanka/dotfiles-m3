@@ -233,28 +233,37 @@ fi
 git_prompt_info() {
   local branch dirty staged untracked ahead behind conflict
 
-  # Get branch name
+  # Get branch
   branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || return
 
-  # Status details
-  dirty=$(git diff --quiet 2>/dev/null || echo "⚡")
-  staged=$(git diff --cached --quiet 2>/dev/null || echo "✓")
-  untracked=$(test -n "$(git ls-files --others --exclude-standard 2>/dev/null)" && echo "✚")
-  conflict=$(test -n "$(git diff --name-only --diff-filter=U 2>/dev/null)" && echo "✖")
+  # Status symbols (colored)
+  [[ -n "$(git status --porcelain --untracked-files=no 2>/dev/null)" ]] \
+      && dirty="%F{red}⚡%f"
 
-  # Ahead/behind
-  ahead=$(git rev-list --left-right --count @{upstream}...HEAD 2>/dev/null | awk '{print $2}')
-  behind=$(git rev-list --left-right --count @{upstream}...HEAD 2>/dev/null | awk '{print $1}')
+  [[ -n "$(git diff --cached --name-only 2>/dev/null)" ]] \
+      && staged="%F{green}✓%f"
 
-  [[ "$ahead" -gt 0 ]] && ahead="⇡$ahead" || ahead=""
-  [[ "$behind" -gt 0 ]] && behind="⇣$behind" || behind=""
+  [[ -n "$(git ls-files --others --exclude-standard 2>/dev/null)" ]] \
+      && untracked="%F{yellow}✚%f"
 
-  # Assemble status
+  [[ -n "$(git diff --name-only --diff-filter=U 2>/dev/null)" ]] \
+      && conflict="%F{red}✖%f"
+
+  # Ahead / behind
+  if git rev-parse --abbrev-ref @{upstream} >/dev/null 2>&1; then
+    local counts
+    counts=($(git rev-list --left-right --count @{upstream}...HEAD 2>/dev/null))
+    behind=${counts[1]}
+    ahead=${counts[2]}
+
+    [[ "$ahead"  -gt 0 ]] && ahead="%F{blue}⇡$ahead%f"
+    [[ "$behind" -gt 0 ]] && behind="%F{magenta}⇣$behind%f"
+  fi
+
   echo "$branch $conflict$dirty$staged$untracked $ahead$behind"
 }
 
-# Allow command substitution in $PROMPT (needed for $(git ...))
 setopt PROMPT_SUBST
 
-PROMPT='%F{cyan}%n@%m%f %F{yellow}%~%f %F{blue}$(git_prompt_info)%f %# '
+PROMPT='%F{yellow}%~%f %F{blue}$(git_prompt_info)%f %# '
 PS1=$PROMPT
