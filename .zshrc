@@ -159,6 +159,7 @@ alias grs="git restore --staged"
 alias gm="git merge"
 alias gmt="git mergetool"
 alias gundo="git reset --hard HEAD~1"
+alias gc!="git commit -v --no-edit"
 
 
 # ========================================
