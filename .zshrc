@@ -260,7 +260,13 @@ git_prompt_info() {
     [[ "$behind" -gt 0 ]] && behind="%F{magenta}⇣$behind%f"
   fi
 
-  echo "$branch $conflict$dirty$staged$untracked $ahead$behind"
+  # Only show ahead/behind if non-zero
+  local ahead_str="" behind_str=""
+
+  [[ "$ahead"  -gt 0 ]] && ahead_str="%F{blue}⇡$ahead%f"
+  [[ "$behind" -gt 0 ]] && behind_str="%F{magenta}⇣$behind%f"
+
+  echo "$branch $conflict$dirty$staged$untracked $behind_str$ahead_str"
 }
 
 setopt PROMPT_SUBST
