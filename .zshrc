@@ -222,7 +222,7 @@ if command -v fzf >/dev/null 2>&1; then
 
   zle -N fzf-file-widget
   # Ctrl+P = file finder (like in editors)
-  bindkey '^P' fzf-file-widget
+  bindkey '^F' fzf-file-widget
 fi
 
 
