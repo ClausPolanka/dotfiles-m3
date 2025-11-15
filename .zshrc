@@ -393,6 +393,67 @@ gmenu() {
 
 
 # ========================================
+# 📚 E-Book filename search helper
+# Usage: booksearch <pattern...>
+# Example: booksearch "harry potter"
+# ========================================
+booksearch() {
+  local ROOT="/Volumes/G-DRIVE SSD/E-Books"
+  local pattern
+
+  if [[ ! -d "$ROOT" ]]; then
+    echo "E-Books folder not found: $ROOT" >&2
+    return 1
+  fi
+
+  if [[ $# -eq 0 ]]; then
+    echo "Usage: booksearch <pattern or regex>" >&2
+    return 1
+  fi
+
+  # Join all arguments into one search pattern
+  pattern="$*"
+
+  # List files (epub/pdf/zip), then filter by pattern (case-insensitive)
+  rg --files -g '*.{epub,pdf,zip}' "$ROOT" \
+    | rg -i "$pattern"
+}
+
+
+# ========================================
+# 📚 Interactive E-Book search + open (fzf)
+# Usage: bookpick <pattern...>
+# ========================================
+bookpick() {
+  local ROOT="/Volumes/G-DRIVE SSD/E-Books"
+  local pattern file
+
+  if [[ ! -d "$ROOT" ]]; then
+    echo "E-Books folder not found: $ROOT" >&2
+    return 1
+  fi
+
+  if [[ $# -eq 0 ]]; then
+    echo "Usage: bookpick <pattern or regex>" >&2
+    return 1
+  fi
+
+  pattern="$*"
+
+  file=$(
+    rg --files -g '*.{epub,pdf,zip}' "$ROOT" \
+      | rg -i "$pattern" \
+      | fzf --height=40% --reverse --prompt="E-Books> "
+  ) || return
+
+  [[ -z "$file" ]] && return
+
+  echo "Opening: $file"
+  open "$file"   # macOS: opens with default app
+}
+
+
+# ========================================
 # ⌨️ Vim-style Insert-mode escape: jk / kj
 # (only applies inside Vim, harmless in zsh)
 # ========================================
