@@ -3,22 +3,19 @@
 # Ensure common binaries are available (important for non-interactive shells)
 export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
-# Fail fast:
-# -e  exit on error
-# -u  error on undefined variables
-# -o pipefail  fail a pipeline if any command fails
+# Fail fast
 set -euo pipefail
 
 # --------------------------------------------------------------------
-# Country selection (HR = default, RO supported)
+# Country selection (HR = default)
 # --------------------------------------------------------------------
 
-COUNTRY_INPUT="${1:-HR}"                           # first argument or default HR
+COUNTRY_INPUT="${1:-HR}"
 COUNTRY_UPPER=$(printf '%s' "$COUNTRY_INPUT" | tr '[:lower:]' '[:upper:]')
 
 SERVICE="GAPI"
 
-# Arrays for environments and URLs (will be filled per country)
+# Arrays prepared for country-specific values
 declare -a ENVS
 declare -a URLS
 
@@ -32,6 +29,7 @@ case "$COUNTRY_UPPER" in
       "https://apiuat.erstebank.hr/george/monitoring/geapi/version"
     )
     ;;
+
   RO)
     COUNTRY="RO"
     ENVS=("FAT" "PROD" "UAT")
@@ -41,8 +39,21 @@ case "$COUNTRY_UPPER" in
       "https://apiuat.bcr.ro/proxy-web/proxy/g/api/public/version"
     )
     ;;
+
+  RS)
+    COUNTRY="RS"
+    ENVS=("FAT BLUE" "FAT GREEN" "PERF" "PROD" "UAT")
+    URLS=(
+      "https://george.blue.fat.erstebank.rs/pxy/g/api/public/version"
+      "https://george.green.fat.erstebank.rs/pxy/g/api/public/version"
+      "https://george.perf.erstebank.rs/pxy/g/api/public/version"
+      "https://george.erstebank.rs/pxy/g/api/public/version"
+      "https://george.uat.erstebank.rs/pxy/g/api/public/version"
+    )
+    ;;
+
   *)
-    echo "Unsupported country: $COUNTRY_UPPER (use HR or RO)" >&2
+    echo "Unsupported country: $COUNTRY_UPPER (supported: HR, RO, RS)" >&2
     exit 1
     ;;
 esac
@@ -66,7 +77,6 @@ for i in "${!ENVS[@]}"; do
     VERSION="unknown"
     BUILD_TIME=""
   else
-    # Adjust jq paths here if your JSON looks different
     VERSION=$(jq -r '.version // .app.version // .build.version // empty' <<<"$JSON")
     BUILD_TIME=$(jq -r '.buildTime // .git.build.time // .time // empty' <<<"$JSON")
   fi
@@ -89,7 +99,6 @@ for i in "${!VERSIONS[@]}"; do
   fi
 done
 
-# Cut timestamp to YYYY-MM-DD (if available)
 LATEST_DATE_SHORT="${LATEST_DATE:0:10}"
 
 # --------------------------------------------------------------------
