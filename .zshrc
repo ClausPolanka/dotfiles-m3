@@ -245,6 +245,48 @@ gopen() {
 
 
 # ========================================
+# 🔖 Show latest release tags (semver + date)
+# Usage:
+#   latest_releases        # 5 letzte Releases
+#   latest_releases 10     # 10 letzte Releases
+# ========================================
+latest_releases() {
+  local count tags tag date
+  local YELLOW="\e[33m" BLUE="\e[34m" RESET="\e[0m"
+
+  # optional: Anzahl, sonst 5
+  if [[ "$1" == <-> ]]; then
+    count="$1"
+  else
+    count=5
+  fi
+
+  # sicherstellen, dass wir in einem Git-Repo sind
+  git rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
+    echo "Not inside a git repository."
+    return 1
+  }
+
+  # Tags im Muster release/*, semver-sortiert, dann begrenzen
+  tags=$(git tag -l 'release/*' --sort=-v:refname | head -n "$count") || return
+
+  if [[ -z "$tags" ]]; then
+    echo "No tags matching 'release/*' found."
+    return 0
+  fi
+
+  echo "Latest $count release tags:"
+  echo
+
+  # Für jeden Tag das Datum holen (%cs = ISO-Datum)
+  while IFS= read -r tag; do
+    date=$(git log -1 --pretty=format:%cs "$tag" 2>/dev/null)
+    printf "%b%-18s%b  %b%s%b\n" "$YELLOW" "$tag" "$RESET" "$BLUE" "$date" "$RESET"
+  done <<< "$tags"
+}
+
+
+# ========================================
 # 🧭 gmenu – fzf-based Git command center
 # ========================================
 gmenu() {
