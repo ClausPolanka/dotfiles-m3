@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Make sure common binaries are available (important for non-interactive shells)
+# Ensure common binaries are available (important for non-interactive shells)
 export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
 # Fail fast:
@@ -10,21 +10,42 @@ export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 set -euo pipefail
 
 # --------------------------------------------------------------------
-# Configuration
+# Country selection (HR = default, RO supported)
 # --------------------------------------------------------------------
 
+COUNTRY_INPUT="${1:-HR}"                           # first argument or default HR
+COUNTRY_UPPER=$(printf '%s' "$COUNTRY_INPUT" | tr '[:lower:]' '[:upper:]')
+
 SERVICE="GAPI"
-COUNTRY="HR"      # Uppercase country code
 
-# Environments shown in the monitoring UI
-ENVS=("FAT" "PPR" "UAT")
+# Arrays for environments and URLs (will be filled per country)
+declare -a ENVS
+declare -a URLS
 
-# Matching host prefixes for each environment (from your screenshot)
-HOSTS=("apifat" "apippr" "apiuat")
-
-# Domain and version endpoint path
-DOMAIN="erstebank.hr"
-MONITOR_PATH="/george/monitoring/geapi/version"
+case "$COUNTRY_UPPER" in
+  HR)
+    COUNTRY="HR"
+    ENVS=("FAT" "PPR" "UAT")
+    URLS=(
+      "https://apifat.erstebank.hr/george/monitoring/geapi/version"
+      "https://apippr.erstebank.hr/george/monitoring/geapi/version"
+      "https://apiuat.erstebank.hr/george/monitoring/geapi/version"
+    )
+    ;;
+  RO)
+    COUNTRY="RO"
+    ENVS=("FAT" "PROD" "UAT")
+    URLS=(
+      "https://apitest.bcr.ro/proxy-web/proxy/g/api/public/version"
+      "https://api.bcr.ro/proxy-web/proxy/g/api/public/version"
+      "https://apiuat.bcr.ro/proxy-web/proxy/g/api/public/version"
+    )
+    ;;
+  *)
+    echo "Unsupported country: $COUNTRY_UPPER (use HR or RO)" >&2
+    exit 1
+    ;;
+esac
 
 # Arrays to store results
 declare -a VERSIONS
@@ -36,10 +57,8 @@ declare -a DATES
 
 for i in "${!ENVS[@]}"; do
   ENV="${ENVS[$i]}"
-  HOST="${HOSTS[$i]}"
-  URL="https://${HOST}.${DOMAIN}${MONITOR_PATH}"
+  URL="${URLS[$i]}"
 
-  # Fetch JSON from monitoring endpoint using system curl
   JSON=$(/usr/bin/curl -s "$URL")
 
   if [[ -z "$JSON" ]]; then
@@ -47,10 +66,8 @@ for i in "${!ENVS[@]}"; do
     VERSION="unknown"
     BUILD_TIME=""
   else
-    # Extract version (adjust jq paths to your actual JSON if needed)
+    # Adjust jq paths here if your JSON looks different
     VERSION=$(jq -r '.version // .app.version // .build.version // empty' <<<"$JSON")
-
-    # Extract build timestamp (field names may differ between services)
     BUILD_TIME=$(jq -r '.buildTime // .git.build.time // .time // empty' <<<"$JSON")
   fi
 
@@ -76,7 +93,7 @@ done
 LATEST_DATE_SHORT="${LATEST_DATE:0:10}"
 
 # --------------------------------------------------------------------
-# Final output in the desired format
+# Final output
 # --------------------------------------------------------------------
 
 echo "Service: ${SERVICE}"
