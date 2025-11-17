@@ -67,8 +67,21 @@ case "$COUNTRY_UPPER" in
     )
     ;;
 
+  AT)
+    COUNTRY="AT"
+    ENVS=("FAT" "FAT2" "FAT2 (blue)" "FAT3" "PERF" "PROD")
+    URLS=(
+      "https://api.fat.sparkasse.at/f1/proxy/g/public/version"
+      "https://api.fat.sparkasse.at/f2/proxy/g/public/version"
+      "https://api.fat.sparkasse.at/f4/proxy/g/public/version"
+      "https://api.fat.sparkasse.at/f3/proxy/g/public/version"
+      "https://api.perf.sparkasse.at/proxy/g/public/version"
+      "https://api.sparkasse.at/proxy/g/public/version"
+    )
+    ;;
+
   *)
-    echo "Unsupported country: $COUNTRY_UPPER (supported: HR, RO, RS, CZ)" >&2
+    echo "Unsupported country: $COUNTRY_UPPER (supported: HR, RO, RS, CZ, AT)" >&2
     exit 1
     ;;
 esac
