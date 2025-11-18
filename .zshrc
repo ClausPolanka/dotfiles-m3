@@ -15,7 +15,8 @@ setopt SHARE_HISTORY            # share history across terminals
 # ----------------------------------------
 # Add personal bin directory to PATH
 # ========================================
-export PATH="$HOME/bin:$PATH"
+export AWS_CLOUD_SCRIPTS="$HOME/dev/george/aws-cloud-scripts/bin"
+export PATH="$AWS_CLOUD_SCRIPTS:$HOME/bin:$PATH"
 
 
 # ========================================
