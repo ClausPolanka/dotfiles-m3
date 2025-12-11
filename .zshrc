@@ -136,6 +136,7 @@ alias gcam="git commit -a -m"
 
 alias gco="git checkout"
 alias gcb="git checkout -b"
+alias gsm="git switch main"
 
 alias gd="git diff"
 alias gds="git diff --staged"
