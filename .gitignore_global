@@ -1,1 +1,10 @@
 .DS_Store
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Optional
+out/
