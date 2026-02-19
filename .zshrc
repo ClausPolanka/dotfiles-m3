@@ -615,24 +615,33 @@ fi
 #   ~/path/to/project branch ✚✓⚡⇣⇡ %
 # ========================================
 git_prompt_info() {
-  local branch dirty staged untracked conflict ahead behind
+  local top branch dirty staged untracked conflict ahead behind
   local symbols=""
 
   # If not in a git repo: nothing
+  git rev-parse --is-inside-work-tree >/dev/null 2>&1 || return
+
+  # Only show git info when we're at the repo root
+  top=$(git rev-parse --show-toplevel 2>/dev/null) || return
+  [[ "$top" == "$PWD" ]] || return
+
   branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || return
 
-  # Status indicators (colored)
+  # Conflicts
   [[ -n "$(git diff --name-only --diff-filter=U 2>/dev/null)" ]] \
-      && symbols+="%F{red}✖%f"
+    && symbols+="%F{red}✖%f"
 
+  # Dirty (tracked changes)
   [[ -n "$(git status --porcelain --untracked-files=no 2>/dev/null)" ]] \
-      && symbols+="%F{red}⚡%f"
+    && symbols+="%F{red}⚡%f"
 
+  # Staged
   [[ -n "$(git diff --cached --name-only 2>/dev/null)" ]] \
-      && symbols+="%F{green}✓%f"
+    && symbols+="%F{green}✓%f"
 
+  # Untracked
   [[ -n "$(git ls-files --others --exclude-standard 2>/dev/null)" ]] \
-      && symbols+="%F{yellow}✚%f"
+    && symbols+="%F{yellow}✚%f"
 
   # Ahead / behind
   if git rev-parse --abbrev-ref @{upstream} >/dev/null 2>&1; then
@@ -640,17 +649,11 @@ git_prompt_info() {
     counts=($(git rev-list --left-right --count @{upstream}...HEAD 2>/dev/null))
     behind=${counts[1]}
     ahead=${counts[2]}
-
     [[ "$behind" -gt 0 ]] && symbols+="%F{magenta}⇣$behind%f"
     [[ "$ahead"  -gt 0 ]] && symbols+="%F{blue}⇡$ahead%f"
   fi
 
-  # If no symbols, only show branch
-  if [[ -z "$symbols" ]]; then
-    echo "$branch"
-  else
-    echo "$branch $symbols"
-  fi
+  [[ -z "$symbols" ]] && echo "$branch" || echo "$branch $symbols"
 }
 
 setopt PROMPT_SUBST
