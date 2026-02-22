@@ -17,6 +17,7 @@ setopt SHARE_HISTORY            # share history across terminals
 # ========================================
 export AWS_CLOUD_SCRIPTS="$HOME/dev/george/aws-cloud-scripts/bin"
 export PATH="$AWS_CLOUD_SCRIPTS:$HOME/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 
 
 # ========================================
