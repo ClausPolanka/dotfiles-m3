@@ -8,3 +8,6 @@
 
 # Optional
 out/
+
+# SDKMAN project specifig
+.sdkmanrc
